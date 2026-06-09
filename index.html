@@ -60,25 +60,37 @@
                 <form id="recordForm" class="space-y-4" onsubmit="submitData(event)">
                     <!-- 溫度 -->
                     <div>
-                        <label class="block text-sm font-semibold mb-1">溫度 / Nhiệt độ (°C)</label>
+                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
+                            <i data-lucide="thermometer" class="w-4 h-4 text-red-500"></i>
+                            溫度 / Nhiệt độ (°C)
+                        </label>
                         <input type="number" id="temp" step="0.1" required placeholder="28.3" class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                     </div>
                     
                     <!-- 濕度 -->
                     <div>
-                        <label class="block text-sm font-semibold mb-1">濕度 / Độ ẩm (%)</label>
+                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
+                            <i data-lucide="droplets" class="w-4 h-4 text-blue-500"></i>
+                            濕度 / Độ ẩm (%)
+                        </label>
                         <input type="number" id="humidity" step="0.1" required placeholder="38.5" class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                     </div>
 
                     <!-- 備註 -->
                     <div>
-                        <label class="block text-sm font-semibold mb-1">備註 / Ghi chú (選填/Tùy chọn)</label>
+                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
+                            <i data-lucide="file-text" class="w-4 h-4 text-gray-500"></i>
+                            備註 / Ghi chú (選填/Tùy chọn)
+                        </label>
                         <textarea id="note" rows="2" placeholder="例如: 感覺異常悶熱 / Cảm thấy rất ngột ngạt" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
                     </div>
 
                     <!-- 現場照片 (修正後的雙按鈕與預覽) -->
                     <div>
-                        <label class="block text-sm font-semibold mb-2">現場照片 / Ảnh hiện trường (選填/Tùy chọn)</label>
+                        <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
+                            <i data-lucide="image" class="w-4 h-4 text-gray-500"></i>
+                            現場照片 / Ảnh hiện trường (選填/Tùy chọn)
+                        </label>
                         
                         <!-- 隱藏的 input 元素，分別對應相機與相簿 -->
                         <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleImage(this)">
@@ -115,6 +127,7 @@
 
                     <!-- 送出按鈕 -->
                     <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-700 active:bg-blue-800 transition flex justify-center items-center gap-2 mt-4">
+                        <i data-lucide="send" class="w-5 h-5"></i>
                         <span>送出紀錄並以上傳時間為準 / Gửi</span>
                     </button>
                     
@@ -328,11 +341,11 @@
                             </div>
                             <div class="flex gap-4">
                                 <div class="flex-1 bg-red-50/50 p-3 rounded-lg border border-red-100 text-center">
-                                    <p class="text-xs text-gray-500 mb-1">溫度 (Nhiệt độ)</p>
+                                    <p class="text-xs text-gray-500 mb-1 flex justify-center items-center gap-1"><i data-lucide="thermometer" class="w-3 h-3 text-red-500"></i>溫度 (Nhiệt độ)</p>
                                     <p class="text-2xl font-bold text-red-600">${item.temp}<span class="text-base font-normal text-red-400 ml-1">°C</span></p>
                                 </div>
                                 <div class="flex-1 bg-blue-50/50 p-3 rounded-lg border border-blue-100 text-center">
-                                    <p class="text-xs text-gray-500 mb-1">濕度 (Độ ẩm)</p>
+                                    <p class="text-xs text-gray-500 mb-1 flex justify-center items-center gap-1"><i data-lucide="droplets" class="w-3 h-3 text-blue-500"></i>濕度 (Độ ẩm)</p>
                                     <p class="text-2xl font-bold text-blue-600">${item.humidity}<span class="text-base font-normal text-blue-400 ml-1">%</span></p>
                                 </div>
                             </div>
