@@ -46,18 +46,22 @@
         <main class="flex-1 p-4 overflow-y-auto">
             
             <!-- 新增紀錄表單 -->
-            <div id="section-record" class="space-y-4">
-                <!-- 提示訊息更新 -->
-                <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-start gap-2">
-                    <i data-lucide="shield-check" class="text-blue-600 shrink-0 mt-0.5"></i>
-                    <div>
-                        <p class="text-sm text-blue-800 font-medium">證據效力說明</p>
-                        <p class="text-xs text-blue-700 mt-1">為確保證據力，照片將保持原始狀態不壓印時間。系統將以 Google 伺服器接收時間為準。</p>
-                        <p class="text-xs text-blue-600 opacity-80 mt-1">Để đảm bảo tính xác thực, ảnh sẽ được giữ nguyên. Thời gian sẽ dựa trên máy chủ Google.</p>
-                    </div>
-                </div>
-
+            <div id="section-record">
                 <form id="recordForm" class="space-y-4" onsubmit="submitData(event)">
+                    
+                    <!-- 區域 (下拉式選單) -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-emerald-500"></i>
+                            紀錄區域 / Khu vực
+                        </label>
+                        <select id="area" required class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                            <option value="" disabled selected>請選擇區域 / Chọn khu vực</option>
+                            <option value="OCA(前)">OCA(前)</option>
+                            <option value="OCR(後)">OCR(後)</option>
+                        </select>
+                    </div>
+
                     <!-- 溫度 -->
                     <div>
                         <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
@@ -85,35 +89,24 @@
                         <textarea id="note" rows="2" placeholder="例如: 感覺異常悶熱 / Cảm thấy rất ngột ngạt" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
                     </div>
 
-                    <!-- 現場照片 (修正後的雙按鈕與預覽) -->
+                    <!-- 現場照片 (只留相簿按鈕) -->
                     <div>
                         <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
                             <i data-lucide="image" class="w-4 h-4 text-gray-500"></i>
                             現場照片 / Ảnh hiện trường (選填/Tùy chọn)
                         </label>
                         
-                        <!-- 隱藏的 input 元素，分別對應相機與相簿 -->
-                        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleImage(this)">
                         <input type="file" id="albumInput" accept="image/*" class="hidden" onchange="handleImage(this)">
 
-                        <!-- 兩個操作按鈕 -->
-                        <div id="photoActionButtons" class="flex gap-3">
-                            <!-- 拍照按鈕 -->
-                            <button type="button" onclick="document.getElementById('cameraInput').click()" class="flex-1 flex flex-col items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 transition shadow-sm active:scale-95">
-                                <i data-lucide="camera" class="w-6 h-6 text-blue-600 mb-1"></i>
-                                <span class="text-sm font-medium text-blue-800">拍照 (Chụp ảnh)</span>
-                            </button>
-                            
-                            <!-- 相簿按鈕 -->
-                            <button type="button" onclick="document.getElementById('albumInput').click()" class="flex-1 flex flex-col items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-emerald-50 hover:bg-emerald-100 transition shadow-sm active:scale-95">
+                        <div id="photoActionButtons">
+                            <button type="button" onclick="document.getElementById('albumInput').click()" class="w-full flex flex-col items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-emerald-50 hover:bg-emerald-100 transition shadow-sm active:scale-95">
                                 <i data-lucide="image-plus" class="w-6 h-6 text-emerald-600 mb-1"></i>
-                                <span class="text-sm font-medium text-emerald-800">相簿 (Thư viện)</span>
+                                <span class="text-sm font-medium text-emerald-800">從相簿選擇照片 (Chọn từ thư viện)</span>
                             </button>
                         </div>
 
                         <!-- 照片預覽區 -->
                         <div id="previewContainer" class="mt-3 relative hidden">
-                            <!-- 顯示照片選擇時間 -->
                             <div class="bg-gray-100 text-gray-600 text-xs py-1 px-2 rounded-t-lg border-b border-gray-200 flex items-center gap-1">
                                 <i data-lucide="clock" class="w-3 h-3"></i>
                                 <span id="photoTimeTag"></span>
@@ -128,13 +121,12 @@
                     <!-- 送出按鈕 -->
                     <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-700 active:bg-blue-800 transition flex justify-center items-center gap-2 mt-4">
                         <i data-lucide="send" class="w-5 h-5"></i>
-                        <span>送出紀錄並以上傳時間為準 / Gửi</span>
+                        <span>送出紀錄 / Gửi</span>
                     </button>
                     
                     <div id="loadingStatus" class="hidden flex-col items-center justify-center py-4 text-blue-600">
                         <div class="loader mb-2"></div>
                         <span class="text-sm font-medium">資料加密上傳中... / Đang tải lên...</span>
-                        <span class="text-xs text-gray-500 mt-1">時間將以伺服器接收為準</span>
                     </div>
                 </form>
             </div>
@@ -159,7 +151,6 @@
         lucide.createIcons();
         let compressedImageBase64 = "";
 
-        // 切換分頁
         function switchTab(tabId) {
             document.getElementById('section-record').classList.add('hidden');
             document.getElementById('section-history').classList.add('hidden');
@@ -180,18 +171,14 @@
             }
         }
 
-        // 移除已選擇的照片
         function removePhoto() {
             compressedImageBase64 = "";
             document.getElementById('imagePreview').src = "";
             document.getElementById('previewContainer').classList.add('hidden');
             document.getElementById('photoActionButtons').classList.remove('hidden');
-            // 清空 input 以便下次能重複選擇同一張
-            document.getElementById('cameraInput').value = "";
             document.getElementById('albumInput').value = "";
         }
 
-        // 處理照片 (僅壓縮，不壓浮水印)
         function handleImage(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
@@ -201,7 +188,7 @@
                     const img = new Image();
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 1024; // 稍微提高解析度以保留細節
+                        const MAX_WIDTH = 1024; 
                         const MAX_HEIGHT = 1024;
                         let width = img.width;
                         let height = img.height;
@@ -215,17 +202,13 @@
                         canvas.width = width;
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
-                        // 僅繪製原始圖片，不添加任何文字
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // 壓縮品質設定為 0.7，在清晰度與檔案大小間取得平衡
                         compressedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
                         
-                        // 顯示預覽圖
                         const preview = document.getElementById('imagePreview');
                         preview.src = compressedImageBase64;
                         
-                        // 顯示選擇照片當下的時間提示 (僅供 UI 參考，非最終紀錄時間)
                         const now = new Date();
                         const timeString = now.toLocaleString('zh-TW', { hour12: false });
                         document.getElementById('photoTimeTag').textContent = `已選擇照片於：${timeString} (準備上傳)`;
@@ -239,7 +222,6 @@
             }
         }
 
-        // 送出資料
         async function submitData(event) {
             event.preventDefault();
             
@@ -248,6 +230,7 @@
                 return;
             }
 
+            const area = document.getElementById('area').value;
             const temp = document.getElementById('temp').value;
             const humidity = document.getElementById('humidity').value;
             const note = document.getElementById('note').value;
@@ -256,7 +239,7 @@
             document.getElementById('loadingStatus').classList.remove('hidden');
             document.getElementById('loadingStatus').classList.add('flex');
 
-            const payload = { temp, humidity, note, image: compressedImageBase64 };
+            const payload = { area, temp, humidity, note, image: compressedImageBase64 };
 
             try {
                 const response = await fetch(SCRIPT_URL, {
@@ -268,10 +251,9 @@
                 const result = await response.json();
                 
                 if(result.status === 'success') {
-                    alert('✅ 紀錄成功！時間已由伺服器自動標記。\nGhi lại thành công!');
+                    alert('✅ 紀錄成功！\nGhi lại thành công!');
                     document.getElementById('recordForm').reset();
                     removePhoto(); 
-                    // 自動切換到歷史紀錄頁面查看結果
                     switchTab('history');
                     loadHistory();
                 } else {
@@ -286,7 +268,6 @@
             }
         }
 
-        // 載入歷史紀錄
         async function loadHistory() {
             if (SCRIPT_URL === "在此貼上你的_GOOGLE_APPS_SCRIPT_網址") {
                 document.getElementById('historyList').innerHTML = '<p class="text-center text-red-500 py-4">URL 未設定</p>';
@@ -322,7 +303,6 @@
                 }
 
                 data.forEach(item => {
-                    // 判斷是否有照片連結
                     const hasImage = item.image && item.image.includes('drive.google.com');
                     const imageBtn = hasImage 
                         ? `<a href="${item.image}" target="_blank" class="mt-3 w-full inline-flex justify-center items-center gap-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg font-medium transition border border-blue-200"><i data-lucide="image" class="w-4 h-4"></i> 查看現場照片 (Xem ảnh)</a>` 
@@ -330,14 +310,17 @@
 
                     const noteHtml = item.note ? `<div class="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-100"><p class="text-sm text-gray-700">${item.note}</p></div>` : '';
 
+                    // 新增區域標籤的顯示
+                    const areaBadge = item.area ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-md font-bold border border-emerald-200">${item.area}</span>` : '';
+
                     const card = `
                         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
                             <div class="flex justify-between items-center border-b border-gray-100 pb-3 mb-3">
-                                <span class="text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                                <span class="text-sm font-bold text-gray-700 flex items-center gap-2">
                                     <i data-lucide="calendar-clock" class="w-4 h-4 text-blue-500"></i>
                                     ${item.timestamp}
                                 </span>
-                                <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">伺服器時間</span>
+                                ${areaBadge}
                             </div>
                             <div class="flex gap-4">
                                 <div class="flex-1 bg-red-50/50 p-3 rounded-lg border border-red-100 text-center">
