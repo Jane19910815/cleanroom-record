@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>環境溫濕度紀錄 | Ghi lại nhiệt độ và độ ẩm</title>
+    <title>環境溫濕度紀錄</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -27,18 +27,15 @@
                 <i data-lucide="thermometer-sun"></i> 
                 環境紀錄系統
             </h1>
-            <p class="text-xs opacity-80 mt-1">Hệ thống ghi lại môi trường</p>
         </header>
 
         <!-- Tabs -->
         <div class="flex border-b border-gray-200">
             <button id="tab-record" class="flex-1 py-3 text-center tab-active flex flex-col items-center" onclick="switchTab('record')">
                 <span class="text-sm">新增紀錄</span>
-                <span class="text-xs opacity-70">Thêm mới</span>
             </button>
             <button id="tab-history" class="flex-1 py-3 text-center text-gray-500 flex flex-col items-center" onclick="switchTab('history')">
                 <span class="text-sm">歷史紀錄</span>
-                <span class="text-xs opacity-70">Lịch sử</span>
             </button>
         </div>
 
@@ -46,19 +43,32 @@
         <main class="flex-1 p-4 overflow-y-auto">
             
             <!-- 新增紀錄表單 -->
-            <div id="section-record">
+            <div id="section-record" class="space-y-4">
                 <form id="recordForm" class="space-y-4" onsubmit="submitData(event)">
                     
                     <!-- 區域 (下拉式選單) -->
                     <div>
                         <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
                             <i data-lucide="map-pin" class="w-4 h-4 text-emerald-500"></i>
-                            紀錄區域 / Khu vực
+                            紀錄區域
                         </label>
                         <select id="area" required class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                            <option value="" disabled selected>請選擇區域 / Chọn khu vực</option>
+                            <option value="" disabled selected>請選擇區域</option>
                             <option value="OCA(前)">OCA(前)</option>
                             <option value="OCR(後)">OCR(後)</option>
+                        </select>
+                    </div>
+
+                    <!-- 烘箱狀態 (新增) -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
+                            <i data-lucide="power" class="w-4 h-4 text-orange-500"></i>
+                            烘箱狀態
+                        </label>
+                        <select id="oven" required class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                            <option value="" disabled selected>請選擇有無開烘箱</option>
+                            <option value="開啟">開啟</option>
+                            <option value="關閉">關閉</option>
                         </select>
                     </div>
 
@@ -66,7 +76,7 @@
                     <div>
                         <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
                             <i data-lucide="thermometer" class="w-4 h-4 text-red-500"></i>
-                            溫度 / Nhiệt độ (°C)
+                            溫度 (°C)
                         </label>
                         <input type="number" id="temp" step="0.1" required placeholder="28.3" class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                     </div>
@@ -75,7 +85,7 @@
                     <div>
                         <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
                             <i data-lucide="droplets" class="w-4 h-4 text-blue-500"></i>
-                            濕度 / Độ ẩm (%)
+                            濕度 (%)
                         </label>
                         <input type="number" id="humidity" step="0.1" required placeholder="38.5" class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                     </div>
@@ -84,16 +94,16 @@
                     <div>
                         <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
                             <i data-lucide="file-text" class="w-4 h-4 text-gray-500"></i>
-                            備註 / Ghi chú (選填/Tùy chọn)
+                            備註 (選填)
                         </label>
-                        <textarea id="note" rows="2" placeholder="例如: 感覺異常悶熱 / Cảm thấy rất ngột ngạt" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+                        <textarea id="note" rows="2" placeholder="例如: 感覺異常悶熱" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
                     </div>
 
-                    <!-- 現場照片 (只留相簿按鈕) -->
+                    <!-- 現場照片 -->
                     <div>
                         <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
                             <i data-lucide="image" class="w-4 h-4 text-gray-500"></i>
-                            現場照片 / Ảnh hiện trường (選填/Tùy chọn)
+                            現場照片 (選填)
                         </label>
                         
                         <input type="file" id="albumInput" accept="image/*" class="hidden" onchange="handleImage(this)">
@@ -101,7 +111,7 @@
                         <div id="photoActionButtons">
                             <button type="button" onclick="document.getElementById('albumInput').click()" class="w-full flex flex-col items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-emerald-50 hover:bg-emerald-100 transition shadow-sm active:scale-95">
                                 <i data-lucide="image-plus" class="w-6 h-6 text-emerald-600 mb-1"></i>
-                                <span class="text-sm font-medium text-emerald-800">從相簿選擇照片 (Chọn từ thư viện)</span>
+                                <span class="text-sm font-medium text-emerald-800">從相簿選擇照片</span>
                             </button>
                         </div>
 
@@ -121,12 +131,12 @@
                     <!-- 送出按鈕 -->
                     <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-700 active:bg-blue-800 transition flex justify-center items-center gap-2 mt-4">
                         <i data-lucide="send" class="w-5 h-5"></i>
-                        <span>送出紀錄 / Gửi</span>
+                        <span>送出紀錄</span>
                     </button>
                     
                     <div id="loadingStatus" class="hidden flex-col items-center justify-center py-4 text-blue-600">
                         <div class="loader mb-2"></div>
-                        <span class="text-sm font-medium">資料加密上傳中... / Đang tải lên...</span>
+                        <span class="text-sm font-medium">資料加密上傳中...</span>
                     </div>
                 </form>
             </div>
@@ -134,13 +144,13 @@
             <!-- 歷史紀錄 -->
             <div id="section-history" class="hidden space-y-4">
                 <button onclick="loadHistory()" class="w-full bg-white border border-gray-300 text-gray-700 font-medium py-2 rounded-lg shadow-sm flex justify-center items-center gap-2 active:bg-gray-50">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> 重新整理 / Làm mới
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> 重新整理
                 </button>
                 <div id="historyLoading" class="hidden flex justify-center py-8">
                     <div class="loader border-gray-300 border-top-gray-600"></div>
                 </div>
                 <div id="historyList" class="space-y-3 pb-8">
-                    <p class="text-center text-gray-500 py-8 text-sm">請點擊上方按鈕載入紀錄<br>Nhấn nút trên để tải dữ liệu</p>
+                    <p class="text-center text-gray-500 py-8 text-sm">請點擊上方按鈕載入紀錄</p>
                 </div>
             </div>
 
@@ -231,6 +241,7 @@
             }
 
             const area = document.getElementById('area').value;
+            const oven = document.getElementById('oven').value;
             const temp = document.getElementById('temp').value;
             const humidity = document.getElementById('humidity').value;
             const note = document.getElementById('note').value;
@@ -239,7 +250,7 @@
             document.getElementById('loadingStatus').classList.remove('hidden');
             document.getElementById('loadingStatus').classList.add('flex');
 
-            const payload = { area, temp, humidity, note, image: compressedImageBase64 };
+            const payload = { area, oven, temp, humidity, note, image: compressedImageBase64 };
 
             try {
                 const response = await fetch(SCRIPT_URL, {
@@ -251,16 +262,16 @@
                 const result = await response.json();
                 
                 if(result.status === 'success') {
-                    alert('✅ 紀錄成功！\nGhi lại thành công!');
+                    alert('✅ 紀錄成功！');
                     document.getElementById('recordForm').reset();
                     removePhoto(); 
                     switchTab('history');
                     loadHistory();
                 } else {
-                    alert('❌ 發生錯誤 (Lỗi): ' + result.message);
+                    alert('❌ 發生錯誤: ' + result.message);
                 }
             } catch (error) {
-                alert('❌ 網路連接失敗。\nLỗi kết nối mạng.\n' + error);
+                alert('❌ 網路連接失敗。\n' + error);
             } finally {
                 document.getElementById('submitBtn').classList.remove('hidden');
                 document.getElementById('loadingStatus').classList.add('hidden');
@@ -298,20 +309,23 @@
                 }
 
                 if(!Array.isArray(data) || data.length === 0) {
-                    historyList.innerHTML = '<p class="text-center text-gray-500 py-8">尚無紀錄 / Chưa có dữ liệu</p>';
+                    historyList.innerHTML = '<p class="text-center text-gray-500 py-8">尚無紀錄</p>';
                     return;
                 }
 
                 data.forEach(item => {
                     const hasImage = item.image && item.image.includes('drive.google.com');
                     const imageBtn = hasImage 
-                        ? `<a href="${item.image}" target="_blank" class="mt-3 w-full inline-flex justify-center items-center gap-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg font-medium transition border border-blue-200"><i data-lucide="image" class="w-4 h-4"></i> 查看現場照片 (Xem ảnh)</a>` 
+                        ? `<a href="${item.image}" target="_blank" class="mt-3 w-full inline-flex justify-center items-center gap-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg font-medium transition border border-blue-200"><i data-lucide="image" class="w-4 h-4"></i> 查看現場照片</a>` 
                         : '';
 
                     const noteHtml = item.note ? `<div class="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-100"><p class="text-sm text-gray-700">${item.note}</p></div>` : '';
 
-                    // 新增區域標籤的顯示
-                    const areaBadge = item.area ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-md font-bold border border-emerald-200">${item.area}</span>` : '';
+                    // 區域與烘箱標籤的顯示
+                    const areaBadge = item.area ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-md font-bold border border-emerald-200 whitespace-nowrap">${item.area}</span>` : '';
+                    
+                    let ovenColor = item.oven && item.oven.includes('開啟') ? 'bg-orange-100 text-orange-800 border-orange-200' : 'bg-gray-100 text-gray-600 border-gray-200';
+                    const ovenBadge = item.oven ? `<span class="${ovenColor} text-xs px-2 py-1 rounded-md font-bold border flex items-center gap-1 whitespace-nowrap"><i data-lucide="power" class="w-3 h-3"></i>烘箱: ${item.oven.split(' ')[0]}</span>` : '';
 
                     const card = `
                         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -320,15 +334,18 @@
                                     <i data-lucide="calendar-clock" class="w-4 h-4 text-blue-500"></i>
                                     ${item.timestamp}
                                 </span>
-                                ${areaBadge}
+                                <div class="flex gap-1 overflow-x-auto">
+                                    ${ovenBadge}
+                                    ${areaBadge}
+                                </div>
                             </div>
                             <div class="flex gap-4">
                                 <div class="flex-1 bg-red-50/50 p-3 rounded-lg border border-red-100 text-center">
-                                    <p class="text-xs text-gray-500 mb-1 flex justify-center items-center gap-1"><i data-lucide="thermometer" class="w-3 h-3 text-red-500"></i>溫度 (Nhiệt độ)</p>
+                                    <p class="text-xs text-gray-500 mb-1 flex justify-center items-center gap-1"><i data-lucide="thermometer" class="w-3 h-3 text-red-500"></i>溫度</p>
                                     <p class="text-2xl font-bold text-red-600">${item.temp}<span class="text-base font-normal text-red-400 ml-1">°C</span></p>
                                 </div>
                                 <div class="flex-1 bg-blue-50/50 p-3 rounded-lg border border-blue-100 text-center">
-                                    <p class="text-xs text-gray-500 mb-1 flex justify-center items-center gap-1"><i data-lucide="droplets" class="w-3 h-3 text-blue-500"></i>濕度 (Độ ẩm)</p>
+                                    <p class="text-xs text-gray-500 mb-1 flex justify-center items-center gap-1"><i data-lucide="droplets" class="w-3 h-3 text-blue-500"></i>濕度</p>
                                     <p class="text-2xl font-bold text-blue-600">${item.humidity}<span class="text-base font-normal text-blue-400 ml-1">%</span></p>
                                 </div>
                             </div>
@@ -347,7 +364,7 @@
                     <div class="bg-red-50 border border-red-200 p-4 rounded-lg m-2 flex items-center gap-3">
                         <i data-lucide="alert-circle" class="text-red-500 w-6 h-6"></i>
                         <div>
-                            <p class="text-red-700 font-bold">讀取失敗 (Lỗi)</p>
+                            <p class="text-red-700 font-bold">讀取失敗</p>
                             <p class="text-xs text-red-600">${error.message}</p>
                         </div>
                     </div>`;
