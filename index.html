@@ -15,13 +15,11 @@
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
 
-    <!-- ⚠️ 重要：請將下方的 URL 替換成你的 Google Apps Script 部署網址 -->
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJZ9N2f9iAlmhVwpEsuwxNNsxkdpGwXEMHrutgr-dF22wiHOcr0j1kveIrcFUxvu4c/exec"; 
     </script>
 
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg flex flex-col">
-        <!-- Header -->
         <header class="bg-blue-600 text-white p-4 shadow-md">
             <h1 class="text-xl font-bold flex items-center gap-2">
                 <i data-lucide="thermometer-sun"></i> 
@@ -29,7 +27,6 @@
             </h1>
         </header>
 
-        <!-- Tabs -->
         <div class="flex border-b border-gray-200">
             <button id="tab-record" class="flex-1 py-3 text-center tab-active flex flex-col items-center" onclick="switchTab('record')">
                 <span class="text-sm">新增紀錄</span>
@@ -39,40 +36,60 @@
             </button>
         </div>
 
-        <!-- 內容區 -->
         <main class="flex-1 p-4 overflow-y-auto">
             
-            <!-- 新增紀錄表單 -->
             <div id="section-record" class="space-y-4">
                 <form id="recordForm" class="space-y-4" onsubmit="submitData(event)">
                     
-                    <!-- 區域 (下拉式選單) -->
                     <div>
-                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
+                        <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
                             <i data-lucide="map-pin" class="w-4 h-4 text-emerald-500"></i>
                             紀錄區域
                         </label>
-                        <select id="area" required class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                            <option value="" disabled selected>請選擇區域</option>
-                            <option value="OCA(前)">OCA(前)</option>
-                            <option value="OCR(後)">OCR(後)</option>
-                        </select>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700 has-[:checked]:ring-2 has-[:checked]:ring-blue-200">
+                                <input type="radio" name="area" value="OCA(前)" required class="w-4 h-4 text-blue-600 mr-2"> OCA(前)
+                            </label>
+                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700 has-[:checked]:ring-2 has-[:checked]:ring-blue-200">
+                                <input type="radio" name="area" value="OCR(後)" class="w-4 h-4 text-blue-600 mr-2"> OCR(後)
+                            </label>
+                        </div>
                     </div>
 
-                    <!-- 烘箱狀態 (新增) -->
                     <div>
-                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
+                        <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
                             <i data-lucide="power" class="w-4 h-4 text-orange-500"></i>
                             烘箱狀態
                         </label>
-                        <select id="oven" required class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
-                            <option value="" disabled selected>請選擇有無開烘箱</option>
-                            <option value="開啟">開啟</option>
-                            <option value="關閉">關閉</option>
-                        </select>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-orange-50 has-[:checked]:border-orange-500 has-[:checked]:text-orange-700 has-[:checked]:ring-2 has-[:checked]:ring-orange-200">
+                                <input type="radio" name="oven" value="開啟" required class="w-4 h-4 text-orange-600 mr-2">
+                                <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> 開啟
+                            </label>
+                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-slate-100 has-[:checked]:border-slate-400 has-[:checked]:text-slate-700">
+                                <input type="radio" name="oven" value="關閉" class="w-4 h-4 text-slate-600 mr-2">
+                                <i data-lucide="x-circle" class="w-4 h-4 mr-1"></i> 關閉
+                            </label>
+                        </div>
                     </div>
 
-                    <!-- 溫度 -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
+                            <i data-lucide="lightbulb" class="w-4 h-4 text-yellow-500"></i>
+                            改質燈狀態
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-yellow-50 has-[:checked]:border-yellow-500 has-[:checked]:text-yellow-700 has-[:checked]:ring-2 has-[:checked]:ring-yellow-100">
+                                <input type="radio" name="lamp" value="開啟" required class="w-4 h-4 text-yellow-600 mr-2">
+                                <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> 開啟
+                            </label>
+                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-slate-100 has-[:checked]:border-slate-400 has-[:checked]:text-slate-700">
+                                <input type="radio" name="lamp" value="關閉" class="w-4 h-4 text-slate-600 mr-2">
+                                <i data-lucide="x-circle" class="w-4 h-4 mr-1"></i> 關閉
+                            </label>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
                             <i data-lucide="thermometer" class="w-4 h-4 text-red-500"></i>
@@ -81,7 +98,6 @@
                         <input type="number" id="temp" step="0.1" required placeholder="28.3" class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                     </div>
                     
-                    <!-- 濕度 -->
                     <div>
                         <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
                             <i data-lucide="droplets" class="w-4 h-4 text-blue-500"></i>
@@ -90,7 +106,6 @@
                         <input type="number" id="humidity" step="0.1" required placeholder="38.5" class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
                     </div>
 
-                    <!-- 備註 -->
                     <div>
                         <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
                             <i data-lucide="file-text" class="w-4 h-4 text-gray-500"></i>
@@ -99,7 +114,6 @@
                         <textarea id="note" rows="2" placeholder="例如: 感覺異常悶熱" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
                     </div>
 
-                    <!-- 現場照片 -->
                     <div>
                         <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
                             <i data-lucide="image" class="w-4 h-4 text-gray-500"></i>
@@ -115,7 +129,6 @@
                             </button>
                         </div>
 
-                        <!-- 照片預覽區 -->
                         <div id="previewContainer" class="mt-3 relative hidden">
                             <div class="bg-gray-100 text-gray-600 text-xs py-1 px-2 rounded-t-lg border-b border-gray-200 flex items-center gap-1">
                                 <i data-lucide="clock" class="w-3 h-3"></i>
@@ -128,7 +141,6 @@
                         </div>
                     </div>
 
-                    <!-- 送出按鈕 -->
                     <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-700 active:bg-blue-800 transition flex justify-center items-center gap-2 mt-4">
                         <i data-lucide="send" class="w-5 h-5"></i>
                         <span>送出紀錄</span>
@@ -141,7 +153,6 @@
                 </form>
             </div>
 
-            <!-- 歷史紀錄 -->
             <div id="section-history" class="hidden space-y-4">
                 <button onclick="loadHistory()" class="w-full bg-white border border-gray-300 text-gray-700 font-medium py-2 rounded-lg shadow-sm flex justify-center items-center gap-2 active:bg-gray-50">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i> 重新整理
@@ -215,7 +226,6 @@
                         ctx.drawImage(img, 0, 0, width, height);
 
                         compressedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                        
                         const preview = document.getElementById('imagePreview');
                         preview.src = compressedImageBase64;
                         
@@ -240,8 +250,11 @@
                 return;
             }
 
-            const area = document.getElementById('area').value;
-            const oven = document.getElementById('oven').value;
+            // 抓取勾選的 radio 值
+            const area = document.querySelector('input[name="area"]:checked')?.value || "";
+            const oven = document.querySelector('input[name="oven"]:checked')?.value || "";
+            const lamp = document.querySelector('input[name="lamp"]:checked')?.value || "";
+            
             const temp = document.getElementById('temp').value;
             const humidity = document.getElementById('humidity').value;
             const note = document.getElementById('note').value;
@@ -250,7 +263,7 @@
             document.getElementById('loadingStatus').classList.remove('hidden');
             document.getElementById('loadingStatus').classList.add('flex');
 
-            const payload = { area, oven, temp, humidity, note, image: compressedImageBase64 };
+            const payload = { area, oven, lamp, temp, humidity, note, image: compressedImageBase64 };
 
             try {
                 const response = await fetch(SCRIPT_URL, {
@@ -321,11 +334,14 @@
 
                     const noteHtml = item.note ? `<div class="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-100"><p class="text-sm text-gray-700">${item.note}</p></div>` : '';
 
-                    // 區域與烘箱標籤的顯示
+                    // 標籤樣式設定
                     const areaBadge = item.area ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-md font-bold border border-emerald-200 whitespace-nowrap">${item.area}</span>` : '';
                     
-                    let ovenColor = item.oven && item.oven.includes('開啟') ? 'bg-orange-100 text-orange-800 border-orange-200' : 'bg-gray-100 text-gray-600 border-gray-200';
-                    const ovenBadge = item.oven ? `<span class="${ovenColor} text-xs px-2 py-1 rounded-md font-bold border flex items-center gap-1 whitespace-nowrap"><i data-lucide="power" class="w-3 h-3"></i>烘箱: ${item.oven.split(' ')[0]}</span>` : '';
+                    let ovenColor = item.oven === '開啟' ? 'bg-orange-100 text-orange-800 border-orange-200' : 'bg-gray-100 text-gray-600 border-gray-200';
+                    const ovenBadge = item.oven ? `<span class="${ovenColor} text-xs px-2 py-1 rounded-md font-bold border flex items-center gap-1 whitespace-nowrap"><i data-lucide="power" class="w-3 h-3"></i>烘箱: ${item.oven}</span>` : '';
+
+                    let lampColor = item.lamp === '開啟' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-gray-100 text-gray-600 border-gray-200';
+                    const lampBadge = item.lamp ? `<span class="${lampColor} text-xs px-2 py-1 rounded-md font-bold border flex items-center gap-1 whitespace-nowrap"><i data-lucide="lightbulb" class="w-3 h-3"></i>改質燈: ${item.lamp}</span>` : '';
 
                     const card = `
                         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -335,6 +351,7 @@
                                     ${item.timestamp}
                                 </span>
                                 <div class="flex gap-1 overflow-x-auto">
+                                    ${lampBadge}
                                     ${ovenBadge}
                                     ${areaBadge}
                                 </div>
