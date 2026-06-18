@@ -2,392 +2,816 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>環境溫濕度紀錄</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCA/OCR Bonding 紀錄系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #ffffff;
+            width: 20px; height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        .spinner-blue {
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            border-top: 3px solid #3b82f6;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen pb-20">
 
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJZ9N2f9iAlmhVwpEsuwxNNsxkdpGwXEMHrutgr-dF22wiHOcr0j1kveIrcFUxvu4c/exec"; 
-    </script>
-
-    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg flex flex-col">
-        <header class="bg-blue-600 text-white p-4 shadow-md">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <i data-lucide="thermometer-sun"></i> 
-                環境紀錄系統
-            </h1>
-        </header>
-
-        <div class="flex border-b border-gray-200">
-            <button id="tab-record" class="flex-1 py-3 text-center tab-active flex flex-col items-center" onclick="switchTab('record')">
-                <span class="text-sm">新增紀錄</span>
+    <div class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
+        <div class="px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-wider">Bonding 不良率統計</h1>
+        </div>
+        <div class="flex flex-row text-center font-medium">
+            <button onclick="switchTab('form')" id="tab-form" class="flex-1 py-3 border-b-4 border-white bg-blue-700 transition-colors">
+                📝 新增/編輯紀錄
             </button>
-            <button id="tab-history" class="flex-1 py-3 text-center text-gray-500 flex flex-col items-center" onclick="switchTab('history')">
-                <span class="text-sm">歷史紀錄</span>
+            <button onclick="switchTab('query')" id="tab-query" class="flex-1 py-3 border-b-4 border-transparent hover:bg-blue-700 transition-colors text-blue-100">
+                🔍 查詢紀錄
             </button>
         </div>
+    </div>
 
-        <main class="flex-1 p-4 overflow-y-auto">
-            
-            <div id="section-record" class="space-y-4">
-                <form id="recordForm" class="space-y-4" onsubmit="submitData(event)">
+    <main class="p-4 max-w-md mx-auto">
+
+        <!-- 區塊一：表單紀錄 -->
+        <div id="section-form" class="space-y-4 fade-in">
+            <!-- 編輯模式提示 -->
+            <div id="editModeAlert" class="hidden bg-amber-100 border border-amber-300 text-amber-800 px-4 py-3 rounded-xl shadow-sm flex justify-between items-center">
+                <div class="flex items-center gap-2 font-semibold text-sm">
+                    <span>✏️ 正在編輯模式</span>
+                </div>
+                <button onclick="cancelEditMode()" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-800 px-3 py-1.5 rounded-lg transition-colors">取消編輯</button>
+            </div>
+
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+                <form id="recordForm" onsubmit="submitForm(event)" class="space-y-4">
                     
                     <div>
-                        <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
-                            <i data-lucide="map-pin" class="w-4 h-4 text-emerald-500"></i>
-                            紀錄區域
-                        </label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700 has-[:checked]:ring-2 has-[:checked]:ring-blue-200">
-                                <input type="radio" name="area" value="OCA(前)" required class="w-4 h-4 text-blue-600 mr-2"> OCA(前)
-                            </label>
-                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700 has-[:checked]:ring-2 has-[:checked]:ring-blue-200">
-                                <input type="radio" name="area" value="OCR(後)" class="w-4 h-4 text-blue-600 mr-2"> OCR(後)
-                            </label>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
-                            <i data-lucide="power" class="w-4 h-4 text-orange-500"></i>
-                            烘箱狀態
-                        </label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-orange-50 has-[:checked]:border-orange-500 has-[:checked]:text-orange-700 has-[:checked]:ring-2 has-[:checked]:ring-orange-200">
-                                <input type="radio" name="oven" value="開啟" required class="w-4 h-4 text-orange-600 mr-2">
-                                <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> 開啟
-                            </label>
-                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-slate-100 has-[:checked]:border-slate-400 has-[:checked]:text-slate-700">
-                                <input type="radio" name="oven" value="關閉" class="w-4 h-4 text-slate-600 mr-2">
-                                <i data-lucide="x-circle" class="w-4 h-4 mr-1"></i> 關閉
-                            </label>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
-                            <i data-lucide="lightbulb" class="w-4 h-4 text-yellow-500"></i>
-                            改質燈狀態
-                        </label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-yellow-50 has-[:checked]:border-yellow-500 has-[:checked]:text-yellow-700 has-[:checked]:ring-2 has-[:checked]:ring-yellow-100">
-                                <input type="radio" name="lamp" value="開啟" required class="w-4 h-4 text-yellow-600 mr-2">
-                                <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> 開啟
-                            </label>
-                            <label class="flex items-center justify-center p-3.5 border border-gray-300 rounded-xl cursor-pointer bg-white font-medium shadow-sm transition-all active:scale-95 has-[:checked]:bg-slate-100 has-[:checked]:border-slate-400 has-[:checked]:text-slate-700">
-                                <input type="radio" name="lamp" value="關閉" class="w-4 h-4 text-slate-600 mr-2">
-                                <i data-lucide="x-circle" class="w-4 h-4 mr-1"></i> 關閉
-                            </label>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
-                            <i data-lucide="thermometer" class="w-4 h-4 text-red-500"></i>
-                            溫度 (°C)
-                        </label>
-                        <input type="number" id="temp" step="0.1" required placeholder="28.3" class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
-                            <i data-lucide="droplets" class="w-4 h-4 text-blue-500"></i>
-                            濕度 (%)
-                        </label>
-                        <input type="number" id="humidity" step="0.1" required placeholder="38.5" class="w-full border border-gray-300 rounded-lg p-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 flex items-center gap-1">
-                            <i data-lucide="file-text" class="w-4 h-4 text-gray-500"></i>
-                            備註 (選填)
-                        </label>
-                        <textarea id="note" rows="2" placeholder="例如: 感覺異常悶熱" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold mb-2 flex items-center gap-1">
-                            <i data-lucide="image" class="w-4 h-4 text-gray-500"></i>
-                            現場照片 (選填)
-                        </label>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">人員代號 <span class="text-red-500">*</span></label>
+                        <select id="opSelect" required class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all appearance-none" onchange="handleOpSelectChange()"></select>
                         
-                        <input type="file" id="albumInput" accept="image/*" class="hidden" onchange="handleImage(this)">
-
-                        <div id="photoActionButtons">
-                            <button type="button" onclick="document.getElementById('albumInput').click()" class="w-full flex flex-col items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-emerald-50 hover:bg-emerald-100 transition shadow-sm active:scale-95">
-                                <i data-lucide="image-plus" class="w-6 h-6 text-emerald-600 mb-1"></i>
-                                <span class="text-sm font-medium text-emerald-800">從相簿選擇照片</span>
-                            </button>
+                        <div id="newOpContainer" class="hidden mt-2 flex gap-2 items-center">
+                            <input type="text" id="newOpInput" placeholder="輸入新人員代號 (例: K)" class="flex-1 px-4 py-3 rounded-lg bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+                            <button type="button" onclick="addNewOp()" class="px-4 py-3 bg-blue-100 text-blue-700 font-semibold rounded-lg hover:bg-blue-200 transition-colors">確認</button>
+                            <button type="button" onclick="cancelNewOp()" class="px-4 py-3 bg-slate-100 text-slate-600 font-semibold rounded-lg hover:bg-slate-200 transition-colors">取消</button>
                         </div>
+                    </div>
 
-                        <div id="previewContainer" class="mt-3 relative hidden">
-                            <div class="bg-gray-100 text-gray-600 text-xs py-1 px-2 rounded-t-lg border-b border-gray-200 flex items-center gap-1">
-                                <i data-lucide="clock" class="w-3 h-3"></i>
-                                <span id="photoTimeTag"></span>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">作業名稱 <span class="text-red-500">*</span></label>
+                        <select id="operationName" required onchange="handleOperationChange()" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all appearance-none">
+                            <option value="" disabled selected>請選擇作業階段...</option>
+                            <optgroup label="OCA Bonding">
+                                <option value="OCA貼合(前段)">OCA貼合 (前段)</option>
+                                <option value="Panel貼合(後段)">Panel貼合 (後段)</option>
+                            </optgroup>
+                            <optgroup label="OCR Bonding">
+                                <option value="OCR Bonding">OCR Bonding</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">製令單號 <span class="text-red-500">*</span></label>
+                            <input type="text" id="workOrder" required placeholder="輸入單號" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">總成品號 <span class="text-red-500">*</span></label>
+                            <input type="text" id="productNum" required placeholder="輸入成品號" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">尺寸 <span class="text-red-500">*</span></label>
+                            <input type="text" id="size" required placeholder="例: 7吋" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">當次貼合數 <span class="text-red-500">*</span></label>
+                            <input type="number" id="totalQty" required min="1" placeholder="輸入當次貼合數" class="w-full px-4 py-3 rounded-lg bg-blue-50 border border-blue-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-red-50 rounded-xl border border-red-100 space-y-3">
+                        <div class="flex justify-between items-end">
+                            <label class="block text-sm font-semibold text-slate-700">不良項目登記 <span class="text-red-500 text-xs font-normal">(若全數良品請留空)</span></label>
+                            <div class="text-sm font-medium text-slate-600">
+                                總不良數: <span id="displayDefectTotal" class="text-red-600 font-bold text-lg">0</span>
                             </div>
-                            <img id="imagePreview" class="w-full rounded-b-lg border border-gray-300 object-contain bg-black" />
-                            <button type="button" onclick="removePhoto()" class="absolute top-1 right-1 bg-red-500/80 hover:bg-red-600 text-white p-1.5 rounded-full shadow-sm backdrop-blur-sm">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
                         </div>
+                        <div id="defectContainer" class="space-y-2"></div>
+                        <button type="button" onclick="addDefectRow()" class="w-full py-2 border-2 border-dashed border-red-200 text-red-500 rounded-lg font-medium hover:bg-red-50 hover:border-red-300 transition-colors flex justify-center items-center gap-1">
+                            <span>➕ 新增不良項目</span>
+                        </button>
                     </div>
 
-                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-700 active:bg-blue-800 transition flex justify-center items-center gap-2 mt-4">
-                        <i data-lucide="send" class="w-5 h-5"></i>
-                        <span>送出紀錄</span>
-                    </button>
-                    
-                    <div id="loadingStatus" class="hidden flex-col items-center justify-center py-4 text-blue-600">
-                        <div class="loader mb-2"></div>
-                        <span class="text-sm font-medium">資料加密上傳中...</span>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">備註</label>
+                        <textarea id="remarks" rows="2" placeholder="其他補充說明 (選填)" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"></textarea>
                     </div>
+
+                    <button type="submit" id="submitBtn" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 active:scale-95">
+                        <span id="submitText">送出紀錄</span>
+                        <div id="submitSpinner" class="spinner hidden"></div>
+                    </button>
                 </form>
             </div>
+        </div>
 
-            <div id="section-history" class="hidden space-y-4">
-                <button onclick="loadHistory()" class="w-full bg-white border border-gray-300 text-gray-700 font-medium py-2 rounded-lg shadow-sm flex justify-center items-center gap-2 active:bg-gray-50">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> 重新整理
+        <!-- 區塊二：查詢紀錄 -->
+        <div id="section-query" class="hidden space-y-4">
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="searchInput" placeholder="搜尋 OP 姓名、單號或不良原因..." class="flex-1 px-4 py-3 rounded-xl shadow-sm border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none">
+                <button onclick="fetchRecords()" class="bg-blue-100 text-blue-700 px-4 py-3 rounded-xl shadow-sm hover:bg-blue-200 transition-colors font-semibold">
+                    重新整理
                 </button>
-                <div id="historyLoading" class="hidden flex justify-center py-8">
-                    <div class="loader border-gray-300 border-top-gray-600"></div>
-                </div>
-                <div id="historyList" class="space-y-3 pb-8">
-                    <p class="text-center text-gray-500 py-8 text-sm">請點擊上方按鈕載入紀錄</p>
-                </div>
             </div>
 
-        </main>
+            <div id="summaryCard" class="hidden bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-2 shadow-sm transition-all">
+                <div class="text-sm text-indigo-800 font-semibold mb-3 flex items-center justify-between">
+                    <span id="summaryMonthTitle">📊 本月人員不良率統計</span>
+                    <span id="summaryCount" class="text-xs bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-full font-medium">共 0 筆</span>
+                </div>
+                <div class="grid grid-cols-3 text-xs text-indigo-400 font-semibold px-2 mb-2 text-center">
+                    <div class="text-left">人員代號</div>
+                    <div>貼合 / 不良數</div>
+                    <div class="text-right">不良率</div>
+                </div>
+                <div id="opSummaryContainer" class="space-y-2"></div>
+            </div>
+
+            <div id="loadingRecords" class="hidden py-10 flex flex-col items-center justify-center text-slate-500">
+                <div class="spinner spinner-blue mb-3"></div>
+                <p>正在載入紀錄，請稍候...</p>
+            </div>
+
+            <div id="recordsContainer" class="space-y-3 pb-6">
+                <div class="text-center py-10 text-slate-500 bg-white rounded-xl shadow-sm border border-slate-100">
+                    點擊上方「重新整理」載入最新資料
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 自定義訊息提示框 (Toast) -->
+    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-white font-medium text-sm shadow-lg transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2">
+        <span id="toastIcon"></span>
+        <span id="toastMsg"></span>
+    </div>
+
+    <!-- 新增不良原因的對話框 (Modal) -->
+    <div id="defectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center transition-opacity">
+        <div class="bg-white p-5 rounded-xl shadow-lg w-11/12 max-w-sm transform transition-all">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">新增不良原因</h3>
+            <p class="text-sm text-slate-500 mb-4" id="defectModalOpName"></p>
+            <input type="text" id="newDefectInput" placeholder="輸入新的不良原因 (例如：異物刮傷)" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all mb-4">
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeDefectModal()" class="px-4 py-2 bg-slate-100 text-slate-600 font-semibold rounded-lg hover:bg-slate-200 transition-colors">取消</button>
+                <button type="button" onclick="confirmNewDefect()" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">確認新增</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        lucide.createIcons();
-        let compressedImageBase64 = "";
+        // ==========================================
+        // ⚠️ 請在這裡貼上您的 Google Apps Script 網址
+        // ==========================================
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyjHs7UlMj3fbTtoGy-urdeYK5L3nkCk_UqbU6uzHRl7S-zbdljNYdEFAy9lolwPlk/exec'; 
 
-        function switchTab(tabId) {
-            document.getElementById('section-record').classList.add('hidden');
-            document.getElementById('section-history').classList.add('hidden');
-            document.getElementById('tab-record').classList.remove('tab-active', 'text-gray-500');
-            document.getElementById('tab-history').classList.remove('tab-active', 'text-gray-500');
-            
-            if(tabId === 'record') {
-                document.getElementById('section-record').classList.remove('hidden');
-                document.getElementById('tab-record').classList.add('tab-active');
-                document.getElementById('tab-history').classList.add('text-gray-500');
+        let allRecords = [];
+        let currentEditTimestamp = null; // 用來記錄當前正在編輯哪一筆資料
+
+        const defaultOps = ['S', 'W', 'J', 'U', 'N', 'A', 'X', 'D', 'V'];
+        const OP_STORAGE_KEY = 'custom_op_list';
+
+        function getOpList() {
+            const customOps = JSON.parse(localStorage.getItem(OP_STORAGE_KEY) || '[]');
+            return [...new Set([...defaultOps, ...customOps])]; 
+        }
+
+        function renderOpSelect() {
+            const select = document.getElementById('opSelect');
+            const ops = getOpList();
+            const currentVal = select.value;
+            let html = '<option value="" disabled selected>請選擇作業員代號...</option>';
+            ops.forEach(op => html += `<option value="${op}">${op}</option>`);
+            html += '<option value="ADD_NEW" class="font-bold text-blue-600">➕ 新增人員...</option>';
+            select.innerHTML = html;
+            if (currentVal && ops.includes(currentVal)) select.value = currentVal;
+        }
+
+        function handleOpSelectChange() {
+            const select = document.getElementById('opSelect');
+            const container = document.getElementById('newOpContainer');
+            if (select.value === 'ADD_NEW') {
+                container.classList.remove('hidden');
+                document.getElementById('newOpInput').focus();
             } else {
-                document.getElementById('section-history').classList.remove('hidden');
-                document.getElementById('tab-history').classList.add('tab-active');
-                document.getElementById('tab-record').classList.add('text-gray-500');
-                if(document.getElementById('historyList').children.length <= 1) {
-                    loadHistory();
-                }
+                container.classList.add('hidden');
             }
         }
 
-        function removePhoto() {
-            compressedImageBase64 = "";
-            document.getElementById('imagePreview').src = "";
-            document.getElementById('previewContainer').classList.add('hidden');
-            document.getElementById('photoActionButtons').classList.remove('hidden');
-            document.getElementById('albumInput').value = "";
+        function addNewOp() {
+            const input = document.getElementById('newOpInput');
+            const newOp = input.value.trim().toUpperCase();
+            if (!newOp) { showToast('請輸入人員代號', 'error'); return; }
+            const customOps = JSON.parse(localStorage.getItem(OP_STORAGE_KEY) || '[]');
+            if (!defaultOps.includes(newOp) && !customOps.includes(newOp)) {
+                customOps.push(newOp);
+                localStorage.setItem(OP_STORAGE_KEY, JSON.stringify(customOps));
+            }
+            renderOpSelect();
+            document.getElementById('opSelect').value = newOp;
+            document.getElementById('newOpContainer').classList.add('hidden');
+            input.value = '';
+            showToast('已新增人員代號：' + newOp);
         }
 
-        function handleImage(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 1024; 
-                        const MAX_HEIGHT = 1024;
-                        let width = img.width;
-                        let height = img.height;
+        function cancelNewOp() {
+            document.getElementById('newOpContainer').classList.add('hidden');
+            document.getElementById('newOpInput').value = '';
+            document.getElementById('opSelect').value = ''; 
+        }
 
-                        if (width > height) {
-                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                        } else {
-                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                        }
+        // --- 不良原因選項與新增邏輯 ---
+        const defectReasonsMap = {
+            'OCA貼合(前段)': ['異物', '貼歪', '氣泡', '髒汙'],
+            'Panel貼合(後段)': ['異物', '貼歪', '破片', '氣泡', '髒汙'],
+            'OCR Bonding': ['Touch撞傷', 'Panel撞傷', '異物進入', '割傷', '氣泡', '髒汙']
+        };
 
-                        canvas.width = width;
-                        canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
+        let currentDefectSelectTarget = null; // 紀錄觸發新增不良原因的是哪一個下拉選單
 
-                        compressedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                        const preview = document.getElementById('imagePreview');
-                        preview.src = compressedImageBase64;
-                        
-                        const now = new Date();
-                        const timeString = now.toLocaleString('zh-TW', { hour12: false });
-                        document.getElementById('photoTimeTag').textContent = `已選擇照片於：${timeString} (準備上傳)`;
-
-                        document.getElementById('previewContainer').classList.remove('hidden');
-                        document.getElementById('photoActionButtons').classList.add('hidden');
-                    }
-                    img.src = e.target.result;
+        function handleDefectChange(selectElem) {
+            if (selectElem.value === 'ADD_NEW') {
+                const opName = document.getElementById('operationName').value;
+                if(!opName) {
+                    showToast('請先選擇作業名稱', 'error');
+                    selectElem.value = '';
+                    return;
                 }
-                reader.readAsDataURL(file);
+                currentDefectSelectTarget = selectElem;
+                document.getElementById('defectModalOpName').textContent = `針對作業：${opName}`;
+                document.getElementById('newDefectInput').value = '';
+                document.getElementById('defectModal').classList.remove('hidden');
+                document.getElementById('newDefectInput').focus();
             }
         }
 
-        async function submitData(event) {
-            event.preventDefault();
-            
-            if (SCRIPT_URL === "在此貼上你的_GOOGLE_APPS_SCRIPT_網址") {
-                alert("錯誤：請先在程式碼中設定 SCRIPT_URL！");
+        function closeDefectModal() {
+            document.getElementById('defectModal').classList.add('hidden');
+            // 如果取消，把該下拉選單重置回未選擇狀態
+            if (currentDefectSelectTarget && currentDefectSelectTarget.value === 'ADD_NEW') {
+                currentDefectSelectTarget.value = ''; 
+            }
+            currentDefectSelectTarget = null;
+        }
+
+        function confirmNewDefect() {
+            const input = document.getElementById('newDefectInput');
+            const newReason = input.value.trim();
+            const opName = document.getElementById('operationName').value;
+
+            if (!newReason) {
+                showToast('請輸入不良原因', 'error');
                 return;
             }
 
-            // 抓取勾選的 radio 值
-            const area = document.querySelector('input[name="area"]:checked')?.value || "";
-            const oven = document.querySelector('input[name="oven"]:checked')?.value || "";
-            const lamp = document.querySelector('input[name="lamp"]:checked')?.value || "";
+            const storageKey = 'custom_defect_' + opName;
+            const customReasons = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const defaultReasons = defectReasonsMap[opName] || [];
             
-            const temp = document.getElementById('temp').value;
-            const humidity = document.getElementById('humidity').value;
-            const note = document.getElementById('note').value;
+            // 存入 LocalStorage
+            if (!defaultReasons.includes(newReason) && !customReasons.includes(newReason)) {
+                customReasons.push(newReason);
+                localStorage.setItem(storageKey, JSON.stringify(customReasons));
+            }
 
-            document.getElementById('submitBtn').classList.add('hidden');
-            document.getElementById('loadingStatus').classList.remove('hidden');
-            document.getElementById('loadingStatus').classList.add('flex');
+            // 更新畫面上的所有不良原因下拉選單
+            document.querySelectorAll('.defect-name').forEach(select => {
+                const currentVal = select.value;
+                let optionsHtml = '<option value="" disabled selected>請選擇不良原因</option>';
+                const allReasons = [...new Set([...defaultReasons, ...customReasons])];
+                allReasons.forEach(r => optionsHtml += `<option value="${r}">${r}</option>`);
+                optionsHtml += '<option value="ADD_NEW" class="font-bold text-blue-600">➕ 新增不良原因...</option>';
+                
+                select.innerHTML = optionsHtml;
+                
+                // 如果是觸發的那個選單，自動選中剛剛新增的項目
+                if (select === currentDefectSelectTarget) {
+                    select.value = newReason;
+                } else if (currentVal && currentVal !== 'ADD_NEW') {
+                    select.value = currentVal;
+                }
+            });
 
-            const payload = { area, oven, lamp, temp, humidity, note, image: compressedImageBase64 };
+            closeDefectModal();
+            showToast('已新增不良原因：' + newReason);
+        }
+
+        // 綁定 Modal 輸入框的 Enter 鍵事件
+        document.getElementById('newDefectInput').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') confirmNewDefect();
+        });
+
+
+        function handleOperationChange(keepExistingRows = false) {
+            const container = document.getElementById('defectContainer');
+            if(!keepExistingRows) container.innerHTML = ''; 
+            
+            // 更新現有下拉選單的選項 (包含自訂儲存的原因)
+            const opName = document.getElementById('operationName').value;
+            let optionsHtml = '<option value="" disabled selected>請選擇不良原因</option>';
+            if (opName && defectReasonsMap[opName]) {
+                const storageKey = 'custom_defect_' + opName;
+                const customReasons = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                const allReasons = [...new Set([...defectReasonsMap[opName], ...customReasons])];
+                
+                allReasons.forEach(reason => optionsHtml += `<option value="${reason}">${reason}</option>`);
+                optionsHtml += '<option value="ADD_NEW" class="font-bold text-blue-600">➕ 新增不良原因...</option>';
+            } else {
+                optionsHtml = '<option value="" disabled selected>請先選擇作業名稱</option>';
+            }
+
+            document.querySelectorAll('.defect-name').forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = optionsHtml;
+                if(currentVal && currentVal !== 'ADD_NEW') select.value = currentVal;
+            });
+
+            calculateDefectTotal();   
+            if(!keepExistingRows) addDefectRow();           
+        }
+
+        function calculateDefectTotal() {
+            let total = 0;
+            document.querySelectorAll('.defect-count').forEach(input => {
+                const val = parseInt(input.value);
+                if (!isNaN(val) && val > 0) total += val;
+            });
+            document.getElementById('displayDefectTotal').textContent = total;
+        }
+
+        function addDefectRow(defaultName = '', defaultCount = '') {
+            const opName = document.getElementById('operationName').value;
+            const container = document.getElementById('defectContainer');
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center defect-row';
+            
+            let optionsHtml = '<option value="" disabled selected>請選擇不良原因</option>';
+            if (opName && defectReasonsMap[opName]) {
+                const storageKey = 'custom_defect_' + opName;
+                const customReasons = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                const allReasons = [...new Set([...defectReasonsMap[opName], ...customReasons])];
+                
+                allReasons.forEach(reason => optionsHtml += `<option value="${reason}">${reason}</option>`);
+                optionsHtml += '<option value="ADD_NEW" class="font-bold text-blue-600">➕ 新增不良原因...</option>';
+            } else {
+                optionsHtml = '<option value="" disabled selected>請先選擇作業名稱</option>';
+            }
+
+            row.innerHTML = `
+                <select onchange="handleDefectChange(this)" class="defect-name flex-1 px-3 py-2 rounded-lg bg-white border border-slate-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all appearance-none">
+                    ${optionsHtml}
+                </select>
+                <input type="number" min="1" class="defect-count w-24 px-3 py-2 rounded-lg bg-white border border-slate-200 focus:border-red-400 focus:ring-2 focus:ring-red-100 outline-none transition-all" placeholder="數量" oninput="calculateDefectTotal()">
+                <button type="button" onclick="removeDefectRow(this)" class="text-slate-400 hover:text-red-500 p-2 transition-colors" title="刪除此列">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                </button>
+            `;
+            container.appendChild(row);
+
+            if (defaultName) row.querySelector('.defect-name').value = defaultName;
+            if (defaultCount) row.querySelector('.defect-count').value = defaultCount;
+        }
+
+        function removeDefectRow(btn) {
+            btn.closest('.defect-row').remove();
+            calculateDefectTotal();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderOpSelect();
+            addDefectRow(); 
+        });
+
+        function switchTab(tab) {
+            const formTab = document.getElementById('tab-form');
+            const queryTab = document.getElementById('tab-query');
+            const formSec = document.getElementById('section-form');
+            const querySec = document.getElementById('section-query');
+
+            if (tab === 'form') {
+                formTab.classList.replace('border-transparent', 'border-white');
+                formTab.classList.replace('text-blue-100', 'text-white');
+                formTab.classList.add('bg-blue-700');
+                queryTab.classList.replace('border-white', 'border-transparent');
+                queryTab.classList.replace('text-white', 'text-blue-100');
+                queryTab.classList.remove('bg-blue-700');
+                formSec.classList.remove('hidden');
+                querySec.classList.add('hidden');
+            } else {
+                queryTab.classList.replace('border-transparent', 'border-white');
+                queryTab.classList.replace('text-blue-100', 'text-white');
+                queryTab.classList.add('bg-blue-700');
+                formTab.classList.replace('border-white', 'border-transparent');
+                formTab.classList.replace('text-white', 'text-blue-100');
+                formTab.classList.remove('bg-blue-700');
+                querySec.classList.remove('hidden');
+                formSec.classList.add('hidden');
+                if (allRecords.length === 0) fetchRecords();
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+            toast.className = `fixed bottom-5 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full text-white font-medium text-sm shadow-xl transition-all duration-300 z-50 flex items-center gap-2`;
+            if (type === 'success') { toast.classList.add('bg-emerald-500'); toastIcon.innerHTML = '✓'; } 
+            else if (type === 'error') { toast.classList.add('bg-rose-500'); toastIcon.innerHTML = '⚠'; }
+            toastMsg.textContent = message;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 3000);
+        }
+
+        // ==========================================
+        // 編輯與刪除邏輯
+        // ==========================================
+        function editRecord(timestamp) {
+            const rec = allRecords.find(r => r.timestamp === timestamp);
+            if (!rec) return;
+
+            currentEditTimestamp = timestamp;
+            document.getElementById('editModeAlert').classList.remove('hidden');
+            
+            // 填入資料
+            document.getElementById('opSelect').value = rec.opName;
+            document.getElementById('operationName').value = rec.operationName;
+            document.getElementById('workOrder').value = rec.workOrder;
+            document.getElementById('productNum').value = rec.productNum;
+            document.getElementById('size').value = rec.size;
+            document.getElementById('totalQty').value = rec.totalQty;
+            document.getElementById('remarks').value = rec.remarks || '';
+
+            // 確保作業名稱選定後，更新不良原因選單的快取項目
+            handleOperationChange(true);
+
+            // 解析並填入不良原因
+            document.getElementById('defectContainer').innerHTML = '';
+            if (rec.defectReason && rec.defectReason !== '無') {
+                const reasons = rec.defectReason.split('、');
+                reasons.forEach(r => {
+                    const match = r.match(/(.+)\((\d+)\)/);
+                    if (match) addDefectRow(match[1].trim(), match[2]);
+                    else addDefectRow();
+                });
+            } else {
+                addDefectRow(); // 若原本全數良品，仍給一列空的
+            }
+            
+            calculateDefectTotal();
+            
+            document.getElementById('submitText').textContent = '💾 儲存修改';
+            document.getElementById('submitBtn').classList.replace('bg-blue-600', 'bg-amber-500');
+            document.getElementById('submitBtn').classList.replace('hover:bg-blue-700', 'hover:bg-amber-600');
+            
+            switchTab('form');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelEditMode() {
+            currentEditTimestamp = null;
+            document.getElementById('recordForm').reset();
+            document.getElementById('editModeAlert').classList.add('hidden');
+            document.getElementById('submitText').textContent = '送出紀錄';
+            document.getElementById('submitBtn').classList.replace('bg-amber-500', 'bg-blue-600');
+            document.getElementById('submitBtn').classList.replace('hover:bg-amber-600', 'hover:bg-blue-700');
+            handleOperationChange();
+            showToast('已取消編輯');
+        }
+
+        async function deleteRecord(timestamp) {
+            if (!confirm('確定要刪除這筆紀錄嗎？此動作無法復原。')) return;
+
+            if (GAS_URL.includes('請替換為您的')) return showToast('尚未設定網址！', 'error');
+
+            showToast('刪除中，請稍候...');
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'delete', data: { originalTimestamp: timestamp } })
+                });
+                const text = await response.text();
+                let result;
+                try { 
+                    result = JSON.parse(text); 
+                } catch (e) { 
+                    throw new Error('權限錯誤，請確認 Apps Script 部署是否設為「所有人」'); 
+                }
+                
+                if (result.status === 'success') {
+                    showToast('紀錄已成功刪除！');
+                    fetchRecords(); // 重新整理畫面
+                } else {
+                    showToast('刪除失敗：' + result.message, 'error');
+                }
+            } catch (error) {
+                showToast(error.message || '連線失敗，請檢查網路設定', 'error');
+            }
+        }
+
+        // ==========================================
+        // 提交表單邏輯 (支援新增與更新)
+        // ==========================================
+        async function submitForm(e) {
+            e.preventDefault();
+
+            if (GAS_URL.includes('請替換為您的')) { showToast('尚未設定 Google Apps Script 網址！', 'error'); return; }
+
+            const opSelectValue = document.getElementById('opSelect').value;
+            if (!opSelectValue || opSelectValue === 'ADD_NEW') return showToast('請選擇有效的 OP 人員', 'error');
+
+            const totalQty = parseInt(document.getElementById('totalQty').value);
+            let calculatedDefectQty = 0;
+            let reasonItems = [];
+            let hasError = false;
+            
+            document.querySelectorAll('.defect-row').forEach(row => {
+                const name = row.querySelector('.defect-name').value;
+                const count = parseInt(row.querySelector('.defect-count').value);
+                if (name || !isNaN(count)) { 
+                    if (!name) { showToast('請選擇不良原因', 'error'); hasError = true; } 
+                    else if (isNaN(count) || count < 1) { showToast(`請輸入【${name}】的有效數量`, 'error'); hasError = true; } 
+                    else { calculatedDefectQty += count; reasonItems.push(`${name}(${count})`); }
+                }
+            });
+
+            if (hasError) return; 
+
+            const defectQty = calculatedDefectQty;
+            const finalDefectReason = reasonItems.length > 0 ? reasonItems.join('、') : '無';
+
+            if (defectQty > totalQty) return showToast(`不良總數(${defectQty}) 不可大於當次貼合數(${totalQty})！`, 'error');
+
+            let defectRateStr = totalQty > 0 ? ((defectQty / totalQty) * 100).toFixed(2) + '%' : '0.00%';
+
+            const payload = {
+                action: currentEditTimestamp ? 'update' : 'add',
+                data: {
+                    originalTimestamp: currentEditTimestamp, // 供後端尋找要修改的資料
+                    opName: opSelectValue,
+                    operationName: document.getElementById('operationName').value,
+                    workOrder: document.getElementById('workOrder').value.trim(),
+                    productNum: document.getElementById('productNum').value.trim(),
+                    size: document.getElementById('size').value.trim(),
+                    totalQty: totalQty,
+                    defectQty: defectQty,
+                    defectRate: defectRateStr,
+                    defectReason: finalDefectReason,
+                    remarks: document.getElementById('remarks').value.trim()
+                }
+            };
+
+            const btn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('submitText');
+            const spinner = document.getElementById('submitSpinner');
+            btn.disabled = true; btn.classList.add('opacity-75', 'cursor-not-allowed');
+            btnText.textContent = '儲存中...'; spinner.classList.remove('hidden');
 
             try {
-                const response = await fetch(SCRIPT_URL, {
+                const response = await fetch(GAS_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
+                const text = await response.text();
+                let result;
+                try { 
+                    result = JSON.parse(text); 
+                } catch (e) { 
+                    throw new Error('權限錯誤，請確認 Apps Script 部署是否設為「所有人」'); 
+                }
                 
-                const result = await response.json();
-                
-                if(result.status === 'success') {
-                    alert('✅ 紀錄成功！');
-                    document.getElementById('recordForm').reset();
-                    removePhoto(); 
-                    switchTab('history');
-                    loadHistory();
+                if (result.status === 'success') {
+                    showToast(currentEditTimestamp ? '紀錄更新成功！' : '紀錄新增成功！');
+                    cancelEditMode(); // 清空表單並恢復新增模式
+                    allRecords = []; 
                 } else {
-                    alert('❌ 發生錯誤: ' + result.message);
+                    showToast('發生錯誤：' + result.message, 'error');
                 }
             } catch (error) {
-                alert('❌ 網路連接失敗。\n' + error);
+                showToast(error.message || '連線失敗，請檢查網路', 'error');
             } finally {
-                document.getElementById('submitBtn').classList.remove('hidden');
-                document.getElementById('loadingStatus').classList.add('hidden');
-                document.getElementById('loadingStatus').classList.remove('flex');
+                btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btnText.textContent = currentEditTimestamp ? '💾 儲存修改' : '送出紀錄';
+                spinner.classList.add('hidden');
             }
         }
 
-        async function loadHistory() {
-            if (SCRIPT_URL === "在此貼上你的_GOOGLE_APPS_SCRIPT_網址") {
-                document.getElementById('historyList').innerHTML = '<p class="text-center text-red-500 py-4">URL 未設定</p>';
+        async function fetchRecords() {
+            if (GAS_URL.includes('請替換為您的')) return showToast('尚未設定網址！', 'error');
+
+            const container = document.getElementById('recordsContainer');
+            const loader = document.getElementById('loadingRecords');
+            container.innerHTML = '';
+            document.getElementById('summaryCard').classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            try {
+                const response = await fetch(GAS_URL + '?action=getRecords');
+                const text = await response.text();
+                let result;
+                try { 
+                    result = JSON.parse(text); 
+                } catch (e) { 
+                    throw new Error('權限錯誤，請確認 Apps Script 部署是否設為「所有人」'); 
+                }
+                
+                if (result.status === 'success') {
+                    allRecords = result.data.reverse(); 
+                    renderRecords(allRecords);
+                } else {
+                    showToast('讀取失敗', 'error');
+                }
+            } catch (error) {
+                showToast(error.message || '讀取失敗，檢查網路', 'error');
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+
+        function renderRecords(records) {
+            const container = document.getElementById('recordsContainer');
+            const summaryCard = document.getElementById('summaryCard');
+            container.innerHTML = '';
+
+            if (records.length === 0) {
+                if (summaryCard) summaryCard.classList.add('hidden');
+                container.innerHTML = `<div class="text-center py-10 text-slate-500 bg-white rounded-xl shadow-sm border border-slate-100">目前尚無任何紀錄</div>`;
                 return;
             }
 
-            const historyList = document.getElementById('historyList');
-            const historyLoading = document.getElementById('historyLoading');
-            
-            historyList.innerHTML = '';
-            historyLoading.classList.remove('hidden');
+            if (summaryCard) {
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
 
-            try {
-                const response = await fetch(SCRIPT_URL, { redirect: 'follow' });
-                const textData = await response.text();
-                
-                let data;
-                try {
-                    data = JSON.parse(textData);
-                } catch (e) {
-                    throw new Error("格式解析失敗。請確認 Apps Script 部署權限。");
-                }
-                
-                historyLoading.classList.add('hidden');
-                
-                if(data.status === 'error') {
-                    throw new Error(data.message);
-                }
-
-                if(!Array.isArray(data) || data.length === 0) {
-                    historyList.innerHTML = '<p class="text-center text-gray-500 py-8">尚無紀錄</p>';
-                    return;
-                }
-
-                data.forEach(item => {
-                    const hasImage = item.image && item.image.includes('drive.google.com');
-                    const imageBtn = hasImage 
-                        ? `<a href="${item.image}" target="_blank" class="mt-3 w-full inline-flex justify-center items-center gap-2 text-sm text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg font-medium transition border border-blue-200"><i data-lucide="image" class="w-4 h-4"></i> 查看現場照片</a>` 
-                        : '';
-
-                    const noteHtml = item.note ? `<div class="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-100"><p class="text-sm text-gray-700">${item.note}</p></div>` : '';
-
-                    // 標籤樣式設定
-                    const areaBadge = item.area ? `<span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-md font-bold border border-emerald-200 whitespace-nowrap">${item.area}</span>` : '';
-                    
-                    let ovenColor = item.oven === '開啟' ? 'bg-orange-100 text-orange-800 border-orange-200' : 'bg-gray-100 text-gray-600 border-gray-200';
-                    const ovenBadge = item.oven ? `<span class="${ovenColor} text-xs px-2 py-1 rounded-md font-bold border flex items-center gap-1 whitespace-nowrap"><i data-lucide="power" class="w-3 h-3"></i>烘箱: ${item.oven}</span>` : '';
-
-                    let lampColor = item.lamp === '開啟' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-gray-100 text-gray-600 border-gray-200';
-                    const lampBadge = item.lamp ? `<span class="${lampColor} text-xs px-2 py-1 rounded-md font-bold border flex items-center gap-1 whitespace-nowrap"><i data-lucide="lightbulb" class="w-3 h-3"></i>改質燈: ${item.lamp}</span>` : '';
-
-                    const card = `
-                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                            <div class="flex justify-between items-center border-b border-gray-100 pb-3 mb-3">
-                                <span class="text-sm font-bold text-gray-700 flex items-center gap-2">
-                                    <i data-lucide="calendar-clock" class="w-4 h-4 text-blue-500"></i>
-                                    ${item.timestamp}
-                                </span>
-                                <div class="flex gap-1 overflow-x-auto">
-                                    ${lampBadge}
-                                    ${ovenBadge}
-                                    ${areaBadge}
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="flex-1 bg-red-50/50 p-3 rounded-lg border border-red-100 text-center">
-                                    <p class="text-xs text-gray-500 mb-1 flex justify-center items-center gap-1"><i data-lucide="thermometer" class="w-3 h-3 text-red-500"></i>溫度</p>
-                                    <p class="text-2xl font-bold text-red-600">${item.temp}<span class="text-base font-normal text-red-400 ml-1">°C</span></p>
-                                </div>
-                                <div class="flex-1 bg-blue-50/50 p-3 rounded-lg border border-blue-100 text-center">
-                                    <p class="text-xs text-gray-500 mb-1 flex justify-center items-center gap-1"><i data-lucide="droplets" class="w-3 h-3 text-blue-500"></i>濕度</p>
-                                    <p class="text-2xl font-bold text-blue-600">${item.humidity}<span class="text-base font-normal text-blue-400 ml-1">%</span></p>
-                                </div>
-                            </div>
-                            ${noteHtml}
-                            ${imageBtn}
-                        </div>
-                    `;
-                    historyList.insertAdjacentHTML('beforeend', card);
+                const monthRecords = records.filter(rec => {
+                    const d = new Date(rec.timestamp);
+                    if(isNaN(d.getTime())) return false; 
+                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
                 });
-                
-                lucide.createIcons();
-                
-            } catch (error) {
-                historyLoading.classList.add('hidden');
-                historyList.innerHTML = `
-                    <div class="bg-red-50 border border-red-200 p-4 rounded-lg m-2 flex items-center gap-3">
-                        <i data-lucide="alert-circle" class="text-red-500 w-6 h-6"></i>
-                        <div>
-                            <p class="text-red-700 font-bold">讀取失敗</p>
-                            <p class="text-xs text-red-600">${error.message}</p>
-                        </div>
-                    </div>`;
-                lucide.createIcons();
+
+                document.getElementById('summaryMonthTitle').textContent = `📊 ${currentMonth + 1}月 各人員不良率統計`;
+                document.getElementById('summaryCount').textContent = `本月共 ${monthRecords.length} 筆`;
+
+                const opContainer = document.getElementById('opSummaryContainer');
+                opContainer.innerHTML = '';
+
+                if (monthRecords.length === 0) {
+                     opContainer.innerHTML = '<div class="text-center text-xs text-slate-400 py-4">本月目前尚無資料</div>';
+                } else {
+                    const opStats = {};
+                    monthRecords.forEach(rec => {
+                        const op = rec.opName;
+                        if (!opStats[op]) opStats[op] = { total: 0, defect: 0 };
+                        opStats[op].total += parseInt(rec.totalQty) || 0;
+                        opStats[op].defect += parseInt(rec.defectQty) || 0;
+                    });
+
+                    const opArray = Object.keys(opStats).map(op => {
+                        const total = opStats[op].total;
+                        const defect = opStats[op].defect;
+                        const rate = total > 0 ? (defect / total) * 100 : 0;
+                        return { op, total, defect, rate };
+                    });
+
+                    opArray.sort((a, b) => b.rate - a.rate);
+
+                    opArray.forEach(stat => {
+                        let rateColor = 'text-emerald-600'; let rateWeight = 'font-semibold';
+                        if (stat.rate > 5) { rateColor = 'text-rose-600'; rateWeight = 'font-bold'; }
+                        else if (stat.rate > 2) { rateColor = 'text-orange-500'; rateWeight = 'font-bold'; }
+
+                        const row = document.createElement('div');
+                        row.className = 'grid grid-cols-3 items-center bg-white p-2.5 rounded-lg shadow-sm border border-indigo-50';
+                        row.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm shadow-inner">${stat.op}</div>
+                            </div>
+                            <div class="text-center text-xs text-slate-500 leading-tight space-y-0.5">
+                                <div>總: <span class="font-medium text-slate-700">${stat.total}</span></div>
+                                <div>不: <span class="font-medium text-red-500">${stat.defect}</span></div>
+                            </div>
+                            <div class="text-right">
+                                <div class="${rateColor} ${rateWeight} text-base tracking-tight">${stat.rate.toFixed(2)}%</div>
+                            </div>
+                        `;
+                        opContainer.appendChild(row);
+                    });
+                }
+                summaryCard.classList.remove('hidden');
             }
+
+            records.forEach(rec => {
+                let badgeColor = 'bg-slate-100 text-slate-700';
+                if (rec.operationName.includes('OCA')) badgeColor = 'bg-blue-100 text-blue-700 border-blue-200';
+                else if (rec.operationName.includes('Panel')) badgeColor = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+                else if (rec.operationName.includes('OCR')) badgeColor = 'bg-purple-100 text-purple-700 border-purple-200';
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col gap-2 relative";
+                
+                const dateObj = new Date(rec.timestamp);
+                let timeStr = '未知時間';
+                if(!isNaN(dateObj.getTime())){
+                    timeStr = dateObj.toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour: '2-digit', minute:'2-digit' });
+                }
+
+                const total = parseInt(rec.totalQty) || 0;
+                const defect = parseInt(rec.defectQty) || 0;
+                let defectRate = rec.defectRate ? rec.defectRate : '0.00%';
+                let rateColor = 'text-green-600'; 
+                
+                if (total > 0) {
+                    const rateNum = (defect / total) * 100;
+                    if (!rec.defectRate) defectRate = rateNum.toFixed(2) + '%';
+                    if(rateNum > 5) rateColor = 'text-rose-600 font-bold';
+                    else if(rateNum > 2) rateColor = 'text-orange-500 font-bold';
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start border-b border-slate-50 pb-2">
+                        <div>
+                            <div class="text-lg font-bold text-slate-800">${rec.opName}</div>
+                            <div class="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                🕒 ${timeStr}
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            <span class="text-xs font-semibold px-2 py-1 rounded-md border ${badgeColor}">${rec.operationName}</span>
+                            <div class="flex gap-2 mt-1">
+                                <button onclick="editRecord('${rec.timestamp}')" class="text-slate-400 hover:text-blue-500 transition-colors" title="修改"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg></button>
+                                <button onclick="deleteRecord('${rec.timestamp}')" class="text-slate-400 hover:text-red-500 transition-colors" title="刪除"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-2 text-sm mt-1">
+                        <div class="text-slate-500">製令單: <span class="text-slate-800 font-medium">${rec.workOrder}</span></div>
+                        <div class="text-slate-500">總成品: <span class="text-slate-800 font-medium">${rec.productNum}</span></div>
+                        <div class="text-slate-500">尺寸: <span class="text-slate-800">${rec.size}</span></div>
+                        
+                        <div class="col-span-2 bg-slate-50 p-2 rounded-lg grid grid-cols-3 text-center mt-1">
+                            <div>
+                                <div class="text-xs text-slate-400">當次貼合數</div>
+                                <div class="font-semibold text-blue-600">${total}</div>
+                            </div>
+                            <div class="border-l border-slate-200">
+                                <div class="text-xs text-slate-400">不良數量</div>
+                                <div class="font-semibold text-red-500">${defect}</div>
+                            </div>
+                            <div class="border-l border-slate-200">
+                                <div class="text-xs text-slate-400">不良率</div>
+                                <div class="${rateColor}">${defectRate}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-1 text-sm">
+                        <span class="font-semibold text-slate-700">不良原因:</span> <span class="text-slate-800">${rec.defectReason}</span>
+                        ${rec.remarks ? `<div class="mt-1 text-slate-500"><span class="font-semibold">備註:</span> ${rec.remarks}</div>` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
         }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase();
+            const filtered = allRecords.filter(rec => 
+                (rec.opName && rec.opName.toLowerCase().includes(keyword)) ||
+                (rec.workOrder && rec.workOrder.toLowerCase().includes(keyword)) ||
+                (rec.defectReason && rec.defectReason.toLowerCase().includes(keyword))
+            );
+            renderRecords(filtered);
+        });
+
     </script>
 </body>
 </html>
